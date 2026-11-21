@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Brp.Core.Tests/Brp.Core.Tests.csproj" />
+  <Project Path="Brp.Core/Brp.Core.csproj" />
+</Solution>
