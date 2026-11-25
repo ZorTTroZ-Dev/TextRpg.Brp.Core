@@ -5,11 +5,17 @@ namespace Brp.Core.Dice;
 /// against whom or what. Uses the game's stable string IDs (such as "ana" or
 /// "crate_14c"), so the same action always keys the same roll.
 /// </summary>
-/// <param name="Kind">What kind of roll it is, such as "intent.persuade".</param>
-/// <param name="Actor">The stable ID of who makes the roll, such as "pc".</param>
-/// <param name="Target">The stable ID of whom or what the roll is against, such as "ana".</param>
-public readonly record struct RollId(string Kind, string Actor, string Target)
+public readonly record struct RollId
 {
+    /// <summary>What kind of roll it is, such as "intent.persuade".</summary>
+    public required string Kind { get; init; }
+
+    /// <summary>The stable ID of who makes the roll, such as "pc".</summary>
+    public required string Actor { get; init; }
+
+    /// <summary>The stable ID of whom or what the roll is against, such as "ana".</summary>
+    public required string Target { get; init; }
+
     /// <summary>
     /// A hash that is the same in every process. Each field is hashed on its
     /// own, so ("ab", "c") and ("a", "bc") give different values.
