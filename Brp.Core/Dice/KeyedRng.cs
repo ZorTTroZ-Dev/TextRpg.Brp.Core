@@ -24,11 +24,11 @@ public static class KeyedRng
     /// <returns>The combined hash.</returns>
     public static ulong Hash(ulong seed, long tick, ulong id, int counter)
     {
-        var h = Mix(seed);
-        h = Combine(h, (ulong)tick, 1);
-        h = Combine(h, id, 2);
-        h = Combine(h, (ulong)(uint)counter, 3);
-        return h;
+        var hash = Mix(seed);
+        hash = Combine(hash, (ulong)tick, 1);
+        hash = Combine(hash, id, 2);
+        hash = Combine(hash, (ulong)(uint)counter, 3);
+        return hash;
     }
 
     /// <summary>Combines any number of 64-bit values, in order, into one.</summary>
@@ -37,10 +37,10 @@ public static class KeyedRng
     /// <returns>The combined hash.</returns>
     public static ulong Hash(ulong first, params ReadOnlySpan<ulong> rest)
     {
-        var h = Mix(first);
+        var hash = Mix(first);
         for (var i = 0; i < rest.Length; i++)
-            h = Combine(h, rest[i], (ulong)i + 1);
-        return h;
+            hash = Combine(hash, rest[i], (ulong)i + 1);
+        return hash;
     }
 
     /// <summary>A D100 roll from 1 to 100 (100 is "00").</summary>
@@ -49,18 +49,20 @@ public static class KeyedRng
     /// <param name="key">A stable identity for the roll, such as <see cref="RollId.StableHash"/>.</param>
     /// <param name="counter">Tells apart rolls that share every other input, such as retries: 0 for the first, 1 for the next, and so on.</param>
     /// <returns>The roll, from 1 to 100.</returns>
-    public static int D100(ulong seed, long tick, ulong key, int counter = 0) =>
-        Below(Hash(seed, tick, key, counter), 100) + 1;
-
-    /// <summary>Maps a hash to 0 .. n-1 using its high bits, with no modulo bias worth measuring.</summary>
-    /// <param name="hash">A well-mixed 64-bit value, such as one from <see cref="Hash(ulong, long, ulong, int)"/>.</param>
-    /// <param name="n">How many results there are. Must be greater than zero.</param>
-    /// <returns>A value from 0 to <paramref name="n"/> - 1.</returns>
-    /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is zero or negative.</exception>
-    public static int Below(ulong hash, int n)
+    public static int D100(ulong seed, long tick, ulong key, int counter = 0)
     {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(n);
-        return (int)Math.BigMul(hash, (ulong)n, out _);
+        return Below(Hash(seed, tick, key, counter), 100) + 1;
+    }
+
+    /// <summary>Maps a hash to 0 .. count-1 using its high bits, with no modulo bias worth measuring.</summary>
+    /// <param name="hash">A well-mixed 64-bit value, such as one from <see cref="Hash(ulong, long, ulong, int)"/>.</param>
+    /// <param name="count">How many results there are. Must be greater than zero.</param>
+    /// <returns>A value from 0 to <paramref name="count"/> - 1.</returns>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="count"/> is zero or negative.</exception>
+    public static int Below(ulong hash, int count)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
+        return (int)Math.BigMul(hash, (ulong)count, out _);
     }
 
     /// <summary>
@@ -71,23 +73,25 @@ public static class KeyedRng
     /// <returns>The 64-bit hash.</returns>
     public static ulong StableHash(string text)
     {
-        var h = 0xCBF29CE484222325UL;
-        foreach (var b in Encoding.UTF8.GetBytes(text))
+        var hash = 0xCBF29CE484222325UL;
+        foreach (var utf8Byte in Encoding.UTF8.GetBytes(text))
         {
-            h ^= b;
-            h *= 0x100000001B3UL;
+            hash ^= utf8Byte;
+            hash *= 0x100000001B3UL;
         }
-        return h;
+        return hash;
     }
 
-    private static ulong Combine(ulong h, ulong value, ulong position) =>
-        Mix(h ^ Mix(value + Golden * position));
-
-    private static ulong Mix(ulong z)
+    private static ulong Combine(ulong hash, ulong value, ulong position)
     {
-        z += Golden;
-        z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9;
-        z = (z ^ (z >> 27)) * 0x94D049BB133111EB;
-        return z ^ (z >> 31);
+        return Mix(hash ^ Mix(value + Golden * position));
+    }
+
+    private static ulong Mix(ulong value)
+    {
+        value += Golden;
+        value = (value ^ (value >> 30)) * 0xBF58476D1CE4E5B9;
+        value = (value ^ (value >> 27)) * 0x94D049BB133111EB;
+        return value ^ (value >> 31);
     }
 }
